@@ -28,10 +28,10 @@ async function fetchWeidianImage(itemID: string): Promise<string | undefined> {
     })
     if (!res.ok) return undefined
     const html = await res.text()
-    // Try both attribute orders for og:image
+    // First try the product image (class="item-img"), both src attribute orders
     const m =
-      html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i) ??
-      html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i)
+      html.match(/<img[^>]+class=["'][^"']*item-img[^"']*["'][^>]+src=["']([^"']+)["']/i) ??
+      html.match(/<img[^>]+src=["']([^"']+)["'][^>]+class=["'][^"']*item-img[^"']*["']/i)
     return m?.[1] ?? undefined
   } catch {
     return undefined

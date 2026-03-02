@@ -53,6 +53,7 @@ export default function Home() {
   const [qcItems, setQcItems] = useState<QCItem[]>([])
   const [error, setError] = useState<string | null>(null)
   const [isDragging, setIsDragging] = useState(false)
+  const [searchStatus, setSearchStatus] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
 
   const processFile = useCallback(async (file: File) => {
@@ -114,6 +115,7 @@ export default function Home() {
   const handleConfirm = useCallback(async () => {
     setStep('searching')
     try {
+      setSearchStatus(`Searching Reddit for "${editedName}"…`)
       const searchRes = await fetch('/api/search', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -122,12 +124,15 @@ export default function Home() {
       if (!searchRes.ok) throw new Error('Search failed')
       const { results } = await searchRes.json()
 
+      setSearchStatus(`Found ${results.length} result${results.length !== 1 ? 's' : ''} — extracting Weidian IDs…`)
       const qcRes = await fetch('/api/qc', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ results }),
       })
       if (!qcRes.ok) throw new Error('QC extraction failed')
+
+      setSearchStatus('Fetching product images…')
       const { items } = await qcRes.json()
 
       setQcItems(items)
@@ -263,7 +268,7 @@ export default function Home() {
 
         {/* ── SEARCHING ── */}
         {step === 'searching' && (
-          <Spinner label="Scanning Reddit & community spreadsheets…" />
+          <Spinner label={searchStatus} />
         )}
       </div>
 
