@@ -7,6 +7,8 @@ type Step = 'upload' | 'identifying' | 'confirm' | 'searching' | 'results'
 interface QCItem {
   itemID: string
   qcUrl: string
+  imageUrl?: string
+  sources: Array<{ title: string; url: string }>
 }
 
 const STEPS = ['Upload', 'Confirm', 'Results'] as const
@@ -302,26 +304,32 @@ export default function Home() {
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {qcItems.map(({ itemID, qcUrl }) => (
+              {qcItems.map(({ itemID, qcUrl, imageUrl, sources }) => (
                 <div
                   key={itemID}
-                  className="bg-gray-900 border border-gray-800 rounded-xl p-5 flex flex-col gap-4 hover:border-gray-700 transition-colors"
+                  className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden flex flex-col hover:border-gray-700 transition-colors"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center text-xl select-none">
-                      👕
-                    </div>
-                    <div>
-                      <p className="text-[11px] text-gray-500 uppercase tracking-widest">
-                        Weidian item
-                      </p>
-                      <p className="text-white font-mono font-semibold text-sm">
-                        #{itemID}
-                      </p>
-                    </div>
+                  {/* Product image */}
+                  <div className="w-full aspect-square bg-gray-800 relative overflow-hidden">
+                    {imageUrl ? (
+                      <img
+                        src={imageUrl}
+                        alt={`Weidian item ${itemID}`}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-gray-600 text-4xl select-none">
+                        🛍
+                      </div>
+                    )}
+                    {/* itemID badge */}
+                    <span className="absolute bottom-2 left-2 bg-black/70 text-gray-300 font-mono text-[10px] px-2 py-0.5 rounded">
+                      #{itemID}
+                    </span>
                   </div>
 
-                  <div className="flex flex-col gap-2">
+                  {/* Links */}
+                  <div className="p-3 flex flex-col gap-2">
                     <a
                       href={qcUrl}
                       target="_blank"
@@ -338,6 +346,29 @@ export default function Home() {
                     >
                       Weidian listing
                     </a>
+
+                    {/* Source proof */}
+                    {sources.length > 0 && (
+                      <div className="flex items-start gap-1.5 pt-1">
+                        <span className="text-gray-600 text-[10px] mt-0.5 shrink-0">📄</span>
+                        <div className="min-w-0">
+                          <a
+                            href={sources[0].url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[11px] text-gray-500 hover:text-indigo-400 transition-colors line-clamp-1 block"
+                            title={sources[0].title}
+                          >
+                            {sources[0].title || sources[0].url}
+                          </a>
+                          {sources.length > 1 && (
+                            <span className="text-[10px] text-gray-700">
+                              +{sources.length - 1} more source{sources.length > 2 ? 's' : ''}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
