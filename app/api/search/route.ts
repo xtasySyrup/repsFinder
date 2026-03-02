@@ -15,6 +15,9 @@ export async function POST(req: NextRequest) {
     }
 
     const results: SearchResult[] = []
+    let redditCount = 0
+    let googleCount = 0
+    let googleError: string | null = null
 
     // ── Reddit JSON API ──────────────────────────────────────────────────────
     try {
@@ -38,12 +41,15 @@ export async function POST(req: NextRequest) {
             snippet: (post.selftext ?? '').slice(0, 1000),
           })
         }
+        redditCount = posts.length
+      } else {
+        console.warn('[search] Reddit non-ok:', redditRes.status)
       }
     } catch (e) {
       console.warn('[search] Reddit error:', e)
     }
 
-    // ── Google Custom Search (optional) ─────────────────────────────────────
+    // ── Google Custom Search ─────────────────────────────────────────────────
     const googleKey = process.env.GOOGLE_API_KEY
     const googleCx = process.env.GOOGLE_CX
 
@@ -54,11 +60,10 @@ export async function POST(req: NextRequest) {
           `https://www.googleapis.com/customsearch/v1?key=${googleKey}&cx=${googleCx}&q=${q}&num=10`
 
         const googleRes = await fetch(googleUrl, { next: { revalidate: 0 } })
+        const data = await googleRes.json()
 
         if (googleRes.ok) {
-          const data = await googleRes.json()
           const items: unknown[] = data?.items ?? []
-
           for (const item of items) {
             const i = item as Record<string, string>
             results.push({
@@ -67,13 +72,21 @@ export async function POST(req: NextRequest) {
               snippet: i.snippet ?? '',
             })
           }
+          googleCount = items.length
+        } else {
+          // Surface the actual error message from Google
+          googleError = data?.error?.message ?? `HTTP ${googleRes.status}`
+          console.warn('[search] Google error:', googleError)
         }
       } catch (e) {
-        console.warn('[search] Google error:', e)
+        googleError = e instanceof Error ? e.message : 'Unknown error'
+        console.warn('[search] Google fetch error:', e)
       }
+    } else {
+      googleError = 'Keys not configured (GOOGLE_API_KEY / GOOGLE_CX missing)'
     }
 
-    return NextResponse.json({ results })
+    return NextResponse.json({ results, meta: { redditCount, googleCount, googleError } })
   } catch (err) {
     console.error('[search]', err)
     return NextResponse.json({ error: 'Search failed' }, { status: 500 })

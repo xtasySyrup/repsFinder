@@ -32,7 +32,10 @@ async function fetchWeidianImage(itemID: string): Promise<string | undefined> {
     const m =
       html.match(/<img[^>]+class=["'][^"']*item-img[^"']*["'][^>]+src=["']([^"']+)["']/i) ??
       html.match(/<img[^>]+src=["']([^"']+)["'][^>]+class=["'][^"']*item-img[^"']*["']/i)
-    return m?.[1] ?? undefined
+    const raw = m?.[1]
+    if (!raw) return undefined
+    // Wrap through proxy so the browser gets it with the correct Referer
+    return `/api/proxy-image?url=${encodeURIComponent(raw)}`
   } catch {
     return undefined
   } finally {

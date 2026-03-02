@@ -122,9 +122,14 @@ export default function Home() {
         body: JSON.stringify({ query: editedName }),
       })
       if (!searchRes.ok) throw new Error('Search failed')
-      const { results } = await searchRes.json()
+      const { results, meta } = await searchRes.json()
 
-      setSearchStatus(`Found ${results.length} result${results.length !== 1 ? 's' : ''} — extracting Weidian IDs…`)
+      const sourceLine = [
+        meta?.redditCount ? `Reddit: ${meta.redditCount}` : null,
+        meta?.googleCount ? `Google: ${meta.googleCount}` : null,
+      ].filter(Boolean).join(', ')
+
+      setSearchStatus(`Found ${results.length} result${results.length !== 1 ? 's' : ''}${sourceLine ? ` (${sourceLine})` : ''} — extracting Weidian IDs…`)
       const qcRes = await fetch('/api/qc', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
